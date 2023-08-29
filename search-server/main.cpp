@@ -75,12 +75,10 @@ public:
     void AddDocument(int document_id, const string& document) {
         const vector<string> words = SplitIntoWordsNoStop(document);
         double words_count = static_cast<double>(words.size());
-        map<string, double> TFs;
-        for (const auto& word : words)
-            TFs[word] += 1. / words_count;
         for (const string& word : words) {
-            word_to_document_freqs_[word].insert({ document_id, TFs[word] });
+            word_to_document_freqs_[word][document_id] += 1. / words_count;
         }
+
     }
 
     vector<Document> FindTopDocuments(const string& raw_query) const {
@@ -134,23 +132,23 @@ private:
         return query;
     }
 
+    double CalcIDF(int docs_count) const {
+        return log(static_cast<double>(document_count_) / static_cast<double>(docs_count));
+    }
+
     vector<Document> FindAllDocuments(const Query& query) const {
         vector<Document> matched_documents;
-        //map<doc_id, relevance>
         map<int, double> matches;
-        //add to docs plus words documents from index
+        //add plus words
         for (const auto& plus_word : query.plus_words) {
             if (word_to_document_freqs_.count(plus_word)) {
-                double IDF = log(static_cast<double>(document_count_) /
-                    static_cast<double>(word_to_document_freqs_.at(plus_word).size()));
-                //                cout << plus_word << ": " << word_to_document_freqs_.size() << " / " 
-                //                    << word_to_document_freqs_.at(plus_word).size() << " = " << IDF << endl;
+                double IDF = CalcIDF(word_to_document_freqs_.at(plus_word).size());
                 for (auto [doc_id, TF] : word_to_document_freqs_.at(plus_word)) {
                     matches[doc_id] += IDF * TF;
                 }
             }
         }
-        //remove minus words from docs
+        //remove minus words
         for (const auto& minus_word : query.minus_words)
             if (word_to_document_freqs_.count(minus_word)) {
                 for (const auto& [id, TF] : word_to_document_freqs_.at(minus_word))
