@@ -74,9 +74,9 @@ public:
 
     void AddDocument(int document_id, const string& document) {
         const vector<string> words = SplitIntoWordsNoStop(document);
-        double words_count = static_cast<double>(words.size());
+        double ratio = 1. / static_cast<double>(words.size());
         for (const string& word : words) {
-            word_to_document_freqs_[word][document_id] += 1. / words_count;
+            word_to_document_freqs_[word][document_id] += ratio;
         }
 
     }
