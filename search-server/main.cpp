@@ -2,6 +2,7 @@
 #include <cmath>
 #include <iostream>
 #include <map>
+#include <numeric>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -11,6 +12,7 @@
 using namespace std;
 
 const int MAX_RESULT_DOCUMENT_COUNT = 5;
+const double EPSILON = 1.e-6;
 
 string ReadLine() {
     string s;
@@ -97,8 +99,11 @@ public:
 
     void AddDocument(int document_id, const string& document, DocumentStatus status,
                      const vector<int>& ratings) {
-        if(IsContainsDocument(document_id) || document_id < 0){
-            throw invalid_argument("AddDocument: Document ID negative or already exist");
+        if(IsContainsDocument(document_id)){
+            throw invalid_argument("AddDocument: Document ID already exist");
+        }
+        if(document_id < 0){
+            throw invalid_argument("AddDocument: Document ID is negative");
         }
         const vector<string> words = SplitIntoWordsNoStop(document);
         //check for errors
@@ -112,6 +117,7 @@ public:
             word_to_document_freqs_[word][document_id] += inv_word_count;
         }
         documents_.emplace(document_id, DocumentData{ComputeAverageRating(ratings), status});
+        document_ids_.push_back(document_id);
     }
 
     template <typename DocumentPredicate>
@@ -125,7 +131,7 @@ public:
 
         sort(matched_documents.begin(), matched_documents.end(),
              [](const Document& lhs, const Document& rhs) {
-                 if (abs(lhs.relevance - rhs.relevance) < 1e-6) {
+                 if (abs(lhs.relevance - rhs.relevance) < EPSILON) {
                      return lhs.rating > rhs.rating;
                  } else {
                      return lhs.relevance > rhs.relevance;
@@ -181,10 +187,10 @@ public:
     }
 
     int GetDocumentId(int index){
-        if(index < 0 || static_cast<size_t>(index) >= documents_.size()){
+        if(index < 0 || static_cast<size_t>(index) >= document_ids_.size()){
             throw out_of_range("GetDocumentId: invalid index"s);
         }
-        return index;
+        return document_ids_.at(index);
     }
 
 private:
@@ -195,6 +201,7 @@ private:
     const set<string> stop_words_;
     map<string, map<int, double>> word_to_document_freqs_;
     map<int, DocumentData> documents_;
+    vector<int> document_ids_;
 
     bool IsStopWord(const string& word) const {
         return stop_words_.count(word) > 0;
@@ -207,6 +214,9 @@ private:
     vector<string> SplitIntoWordsNoStop(const string& text) const {
         vector<string> words;
         for (const string& word : SplitIntoWords(text)) {
+            if(!IsValidWord(word)){
+                throw invalid_argument("SplitIntoWordsNoStop: string contains invalid word: "s + word);
+            }
             if (!IsStopWord(word)) {
                 words.push_back(word);
             }
@@ -218,10 +228,7 @@ private:
         if (ratings.empty()) {
             return 0;
         }
-        int rating_sum = 0;
-        for (const int rating : ratings) {
-            rating_sum += rating;
-        }
+        int rating_sum = accumulate(ratings.begin(), ratings.end(), 0);
         return rating_sum / static_cast<int>(ratings.size());
     }
 
