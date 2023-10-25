@@ -1,11 +1,11 @@
 #include "request_queue.h"
 
-vector<Document> RequestQueue::AddFindRequest(const string& raw_query, DocumentStatus status) {
+std::vector<Document> RequestQueue::AddFindRequest(const std::string& raw_query, DocumentStatus status) {
     auto result = search_server_.FindTopDocuments(raw_query, status);
     AddResult(result);
     return result;
 }
-vector<Document> RequestQueue::AddFindRequest(const string& raw_query) {
+std::vector<Document> RequestQueue::AddFindRequest(const std::string& raw_query) {
     auto result = search_server_.FindTopDocuments(raw_query);
     AddResult(result);
     return result;
@@ -24,7 +24,7 @@ void RequestQueue::RemoveOld(){
     }
 }
 
-void RequestQueue::AddResult(const vector<Document>& result){
+void RequestQueue::AddResult(const std::vector<Document>& result){
     if(result.size() == 0){
         ++empty_requests;
     }

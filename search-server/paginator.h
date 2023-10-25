@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <ostream>
 #include "document.h"
 
@@ -23,7 +24,7 @@ private:
 template <typename It>
 class Paginator{
 public:
-    Paginator(It b, It e, long long size): begin_(b), end_(e), size_(size){
+    Paginator(It b, It e, size_t size): begin_(b), end_(e), size_(static_cast<long long>(size)){
         It page_begin = begin_;
         for(It i = begin_; i != end_; ++i){
             long long dist = distance(page_begin, i);
@@ -46,12 +47,12 @@ private:
     It begin_;
     It end_;
     long long size_;
-    vector<IteratorRange<It>> pages_;
+    std::vector<IteratorRange<It>> pages_;
 };
 
 template <typename Container>
-auto Paginate(const Container& c, size_t page_size) {
-    return Paginator(begin(c), end(c), page_size);
+auto Paginate(const Container& c, int page_size) {
+    return Paginator(begin(c), end(c), static_cast<size_t>(page_size));
 }
 
 ostream& operator<<(ostream& os, const Document& doc){
