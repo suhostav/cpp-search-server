@@ -22,6 +22,17 @@ std::vector<Document> SearchServer::FindTopDocuments(const std::string& raw_quer
         });
 }
 
+    std::vector<Document> SearchServer::FindTopDocuments(const std::string& raw_query) const {
+        return FindTopDocuments(raw_query, DocumentStatus::ACTUAL);
+    }
+
+    int SearchServer::GetDocumentCount() const {
+        return static_cast<int>(documents_.size());
+    }
+
+    int SearchServer::GetDocumentId(int index) const {
+        return static_cast<int>(document_ids_.at(static_cast<std::vector<int>::size_type>(index)));
+    }
 
 std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument(const std::string& raw_query,
                                                     int document_id) const {
@@ -48,6 +59,17 @@ std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument
     return {matched_words, documents_.at(document_id).status};
 }
 
+bool SearchServer::IsStopWord(const std::string& word) const {
+    return stop_words_.count(word) > 0;
+}
+
+bool SearchServer::IsValidWord(const std::string& word) {
+    return std::none_of(word.begin(), word.end(), [](char c) {
+        return c >= '\0' && c < ' ';
+    });
+}
+
+
 std::vector<std::string> SearchServer::SplitIntoWordsNoStop(const std::string& text) const {
     std::vector<std::string> words;
     for (const std::string& word : SplitIntoWords(text)) {
@@ -59,6 +81,17 @@ std::vector<std::string> SearchServer::SplitIntoWordsNoStop(const std::string& t
         }
     }
     return words;
+}
+
+    int SearchServer::ComputeAverageRating(const std::vector<int>& ratings) {
+    if (ratings.empty()) {
+        return 0;
+    }
+    int rating_sum = 0;
+    for (const int rating : ratings) {
+        rating_sum += rating;
+    }
+    return rating_sum / static_cast<int>(ratings.size());
 }
 
 SearchServer::QueryWord SearchServer::ParseQueryWord(const std::string& text) const {
@@ -76,6 +109,10 @@ SearchServer::QueryWord SearchServer::ParseQueryWord(const std::string& text) co
     }
 
     return {word, is_minus, IsStopWord(word)};
+}
+
+double SearchServer::ComputeWordInverseDocumentFreq(const std::string& word) const {
+    return std::log(GetDocumentCount() * 1.0 / static_cast<int>(word_to_document_freqs_.at(word).size()));
 }
 
 SearchServer::Query SearchServer::ParseQuery(const std::string& text) const {

@@ -55,12 +55,6 @@ auto Paginate(const Container& c, int page_size) {
     return Paginator(begin(c), end(c), static_cast<size_t>(page_size));
 }
 
-ostream& operator<<(ostream& os, const Document& doc){
-    using namespace std;
-    os << "document_id = "s << doc.id << ", relevance = " << doc.relevance << ", rating = " << doc.rating;
-    return os;
-}
-
 template <typename It>
 ostream& operator<<(ostream& os, IteratorRange<It> page){
     for(It i = page.begin(); i != page.end(); ++i){
